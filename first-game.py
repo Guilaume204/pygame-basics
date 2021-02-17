@@ -7,7 +7,7 @@ import pygame.freetype
 pygame.init()
 
 
-size = width, height = 1000, 800
+size = width, height = 1280, 800
 speed = [1, 1]
 black = 60, 60, 60
 BLACK=(0,0,0)
@@ -15,6 +15,9 @@ BLACK=(0,0,0)
 white = (255, 255, 255)
 green = (0, 255, 0)
 blue = (0, 0, 128)
+
+PLAYER_MOVE_OFFSET = 75
+SPEED_INCREASER = 1.01
  
 
 screen = pygame.display.set_mode(size)
@@ -30,7 +33,7 @@ myfont = pygame.font.Font(pygame.font.get_default_font(), 36)
 
 ball = pygame.image.load("intro_ball.gif")
 ballrect = ball.get_rect()
-ballrect.update(1400, 500, ballrect.width, ballrect.height)
+ballrect.update(1400, 500, ballrect.width*.5, ballrect.height*.5)
 
 paddle_left = pygame.image.load("paddle.png")
 paddle_left_rect = paddle_left.get_rect()
@@ -55,45 +58,65 @@ while True:
             print(event.key)
             if event.key == 1073741905:
                 print('player 1: move down')
-                paddle_left_rect = paddle_left_rect.move(0,50)
+                paddle_left_rect = paddle_left_rect.move(0,PLAYER_MOVE_OFFSET)
                 
             if event.key == 1073741906:
                 print('player 1 : move up')
-                paddle_left_rect = paddle_left_rect.move(0,-50)
+                paddle_left_rect = paddle_left_rect.move(0,-1*PLAYER_MOVE_OFFSET)
 
             if event.key == 115:
                 print('player 2 : move dowm')
-                paddle_right_rect = paddle_right_rect.move(0,50)
+                paddle_right_rect = paddle_right_rect.move(0,PLAYER_MOVE_OFFSET)
 
             if event.key == 119:
                 print('Player 2 : move up')
-                paddle_right_rect = paddle_right_rect.move(0,-50)
-
+                paddle_right_rect = paddle_right_rect.move(0,-1*PLAYER_MOVE_OFFSET)
     
     ballrect = ballrect.move(speed)
     if ballrect.left < 0:  
         print("Player 1 loses!!!")
         ballrect.update(width/2, height/2, ballrect.width, ballrect.height)
-        speed = get_start_speed(2)
+        speed = get_start_speed(np.sqrt(2))
+        sleep(1)
         player2_score = player2_score + 1
     if ballrect.right > width:
         print("Player 2 loses!!!")
         ballrect.update(width/2, height/2, ballrect.width, ballrect.height)
-        speed = get_start_speed(-2)
+        speed = get_start_speed(np.sqrt(2))
         player1_score = player1_score + 1
+        sleep(1)
 
 
     if ballrect.top < 0 or ballrect.bottom > height:
         speed[1] = -speed[1]
 
     if ballrect.colliderect(paddle_left_rect):
-        speed[0] = -speed[0]
-        speed[1] = -speed[1]
+        x_a = speed[0]
+        y_a = speed[1]
+        a = np.linalg.norm(speed)
+        theta_a = np.arctan(x_a/y_a)
+        theta_b = theta_a 
+        b = a*SPEED_INCREASER
+        y_b = np.cos(theta_b)*b
+        x_b = -1*np.sin(theta_b)*b
+
+        speed[0] = x_b
+        speed[1] = y_b
 
 
     if ballrect.colliderect(paddle_right_rect):
-        speed[0] = -speed[0]
-        speed[1] = -speed[1]
+        x_a = speed[0]
+        y_a = speed[1]
+        a = np.linalg.norm(speed)
+        theta_a = np.arctan(x_a/y_a) - np.pi/2
+        theta_b = theta_a 
+        b = a*SPEED_INCREASER
+        y_b = np.cos(theta_b)*b
+        x_b = np.sin(theta_b)*b
+
+        speed[0] = x_b
+        speed[1] = y_b
+
         
 
     screen.fill(black)
@@ -101,7 +124,7 @@ while True:
     screen.blit(ball, ballrect)
     screen.blit(paddle_left, paddle_left_rect)
     screen.blit(paddle_right, paddle_right_rect)
-    text_surface = myfont.render(f'p1: {player1_score}\np2: {player2_score}', True, green, blue)
+    text_surface = myfont.render(f'p1: {player1_score}\np2: {player2_score}\n{round(np.linalg.norm(speed),2)}', True, green, blue)
     screen.blit(text_surface, dest=(0,0))
     
 
